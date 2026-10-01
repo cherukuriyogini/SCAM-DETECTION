@@ -20,17 +20,19 @@ export interface SymptomItem {
   id: string;
   name: string;
   duration: string;
-  severity: "Mild" | "Moderate" | "Severe";
-  status: "Active" | "Resolving" | "Resolved";
-  sourceSentence: string;
+  severity: string;
+  status?: string;
+  evidence: string;
+  sourceSentence?: string;
 }
 
 export interface DiagnosisItem {
   id: string;
   name: string;
-  certainty: "mentioned" | "suspected" | "confirmed";
+  certainty: string;
   icd10?: string;
-  sourceSentence: string;
+  evidence: string;
+  sourceSentence?: string;
 }
 
 export interface MedicationItem {
@@ -41,14 +43,8 @@ export interface MedicationItem {
   duration: string;
   route: string;
   instructions: string;
-  sourceSentence: string;
-}
-
-export interface EvidenceItem {
-  entityName: string;
-  entityType: "Symptom" | "Medication" | "Diagnosis" | "Advice" | "Chief Complaint";
-  extractedValue: string;
-  sourceSentence: string;
+  evidence: string;
+  sourceSentence?: string;
 }
 
 export interface ClinicalSummary {
@@ -56,20 +52,20 @@ export interface ClinicalSummary {
   patient: PatientInfo;
   consultation: ConsultationMeta;
   chiefComplaint: string;
-  chiefComplaintSource?: string;
+  chiefComplaintEvidence?: string;
   symptoms: SymptomItem[];
   diagnoses: DiagnosisItem[];
   medications: MedicationItem[];
   dietaryAdvice: string[];
   clinicalAdvice: string[];
   followUp: string;
-  warnings: string[];
+  warnings?: string[];
   summaryText: string;
   transcript: string;
   audioFileName?: string;
   audioDuration?: string;
   status: "AI Draft" | "Doctor Reviewed" | "Approved & Prescribed";
-  mode: "demo" | "ai";
+  mode: "ai" | "demo";
   processedAt: string;
   reviewNotes?: string;
   doctorSignatureName?: string;

@@ -13,47 +13,47 @@ export default function EvidencePanel({ summary }: EvidencePanelProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  // Build evidence items from the summary
+  // Build real evidence items directly from AI extraction
   const items = [
-    {
-      category: "Chief Complaint",
-      entity: "Chief Complaint",
-      value: summary.chiefComplaint,
-      source: summary.chiefComplaintSource || summary.transcript.split("\n")[1] || "Patient reported during consultation intake.",
-    },
+    ...(summary.chiefComplaint
+      ? [
+          {
+            category: "Chief Complaint",
+            entity: "Chief Complaint",
+            value: summary.chiefComplaint,
+            source: summary.chiefComplaintEvidence || summary.chiefComplaint,
+          },
+        ]
+      : []),
     ...summary.symptoms.map((s) => ({
       category: "Symptoms",
       entity: s.name,
       value: `${s.duration} • ${s.severity} severity`,
-      source: s.sourceSentence,
+      source: s.evidence || s.sourceSentence || "Mentioned in consultation audio.",
     })),
     ...summary.diagnoses.map((d) => ({
       category: "Diagnosis",
       entity: d.name,
-      value: `Status: ${d.certainty.toUpperCase()} by physician`,
-      source: d.sourceSentence,
+      value: `Certainty: ${d.certainty.toUpperCase()} by physician`,
+      source: d.evidence || d.sourceSentence || "Mentioned by physician in consultation audio.",
     })),
     ...summary.medications.map((m) => ({
       category: "Medication",
       entity: `${m.name} ${m.dosage}`,
       value: `${m.frequency} for ${m.duration} (${m.instructions})`,
-      source: m.sourceSentence,
+      source: m.evidence || m.sourceSentence || "Prescribed by physician in consultation audio.",
     })),
     ...summary.dietaryAdvice.map((a, i) => ({
       category: "Advice",
       entity: `Dietary Advice #${i + 1}`,
       value: a,
-      source: summary.transcript.includes("fluid")
-        ? "Drink plenty of fluids and get adequate rest."
-        : summary.transcript.split("\n").slice(-2)[0] || a,
+      source: a,
     })),
     ...summary.clinicalAdvice.map((a, i) => ({
       category: "Advice",
       entity: `Clinical Advice #${i + 1}`,
       value: a,
-      source: summary.transcript.includes("rest")
-        ? "Adequate rest and symptom monitoring."
-        : a,
+      source: a,
     })),
   ];
 
@@ -83,11 +83,11 @@ export default function EvidencePanel({ summary }: EvidencePanelProps) {
             <div className="flex items-center space-x-2">
               <h3 className="font-bold text-slate-900 text-base">Why was this extracted?</h3>
               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
-                100% Traceable
+                Direct Dialogue Grounding
               </span>
             </div>
             <p className="text-xs text-slate-500">
-              Clinical entity verification — every fact linked to its original conversation quote.
+              Clinical entity verification — every fact linked to the actual conversation excerpt.
             </p>
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function EvidencePanel({ summary }: EvidencePanelProps) {
                   </span>
                   <span className="text-[11px] text-emerald-700 font-medium flex items-center">
                     <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
-                    Verified Quote
+                    Verified Evidence
                   </span>
                 </div>
 

@@ -29,15 +29,15 @@ export default function DoctorReviewForm({
   onApprove,
   onCancel,
 }: DoctorReviewFormProps) {
-  // Form State
+  // Form State initialized directly from extracted summary
   const [patientName, setPatientName] = useState(summary.patient.name);
   const [patientAge, setPatientAge] = useState(summary.patient.age);
   const [patientGender, setPatientGender] = useState(summary.patient.gender);
   const [chiefComplaint, setChiefComplaint] = useState(summary.chiefComplaint);
   const [diagnosisName, setDiagnosisName] = useState(
-    summary.diagnoses[0]?.name || "Upper respiratory tract infection"
+    summary.diagnoses[0]?.name || "Clinical Impression"
   );
-  const [diagnosisCertainty, setDiagnosisCertainty] = useState<"mentioned" | "suspected" | "confirmed">(
+  const [diagnosisCertainty, setDiagnosisCertainty] = useState<string>(
     summary.diagnoses[0]?.certainty || "mentioned"
   );
   const [symptoms, setSymptoms] = useState<SymptomItem[]>(summary.symptoms);
@@ -56,7 +56,7 @@ export default function DoctorReviewForm({
       duration: "1 day",
       severity: "Moderate",
       status: "Active",
-      sourceSentence: "Added manually by physician during clinical review.",
+      evidence: "Added manually by physician during clinical review.",
     };
     setSymptoms([...symptoms, newSym]);
   };
@@ -81,7 +81,7 @@ export default function DoctorReviewForm({
       duration: "5 days",
       route: "Oral",
       instructions: "After meals",
-      sourceSentence: "Added manually by physician during clinical review.",
+      evidence: "Added manually by physician during clinical review.",
     };
     setMedications([...medications, newMed]);
   };
@@ -99,7 +99,7 @@ export default function DoctorReviewForm({
   // Advice handlers
   const handleAddAdvice = (type: "diet" | "clinical") => {
     if (type === "diet") {
-      setDietaryAdvice([...dietaryAdvice, "New dietary recommendation"]);
+      setDietaryAdvice([...dietaryAdvice, "New dietary instruction"]);
     } else {
       setClinicalAdvice([...clinicalAdvice, "New lifestyle or activity instruction"]);
     }
@@ -140,6 +140,7 @@ export default function DoctorReviewForm({
           id: summary.diagnoses[0]?.id || "diag-1",
           name: diagnosisName,
           certainty: diagnosisCertainty,
+          evidence: summary.diagnoses[0]?.evidence || "Confirmed by physician.",
           sourceSentence: summary.diagnoses[0]?.sourceSentence || "Confirmed by physician.",
         },
       ],
@@ -150,7 +151,10 @@ export default function DoctorReviewForm({
       followUp,
       reviewNotes: doctorNotes,
       status: newStatus,
-      doctorSignatureName: newStatus === "Approved & Prescribed" ? "Dr. Sarah Jenkins, MD" : undefined,
+      doctorSignatureName:
+        newStatus === "Approved & Prescribed"
+          ? summary.consultation.doctorName || "Dr. Sarah Jenkins, MD"
+          : undefined,
       approvedAt: newStatus === "Approved & Prescribed" ? new Date().toLocaleString() : undefined,
     };
   };
@@ -180,7 +184,7 @@ export default function DoctorReviewForm({
           <div className="flex items-center space-x-2 text-xs font-semibold">
             <span className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700">
               <CheckCircle className="w-3.5 h-3.5 text-teal-600" />
-              <span>AI Draft</span>
+              <span>AI Extracted</span>
             </span>
             <ArrowRight className="w-3.5 h-3.5 text-slate-300" />
             <span className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-teal-100 text-teal-800 border border-teal-200 ring-2 ring-teal-500/20">
@@ -202,7 +206,7 @@ export default function DoctorReviewForm({
         <div>
           <p className="font-semibold text-teal-950">You have full clinical oversight.</p>
           <p className="text-teal-800 mt-0.5">
-            Modify any extracted symptom, diagnosis, medicine, dosage, or advice below. No prescription is ever issued without explicit doctor approval.
+            Modify any extracted symptom, diagnosis, medicine, dosage, or advice below. Every change immediately reflects on the final issued prescription.
           </p>
         </div>
       </div>
@@ -272,10 +276,10 @@ export default function DoctorReviewForm({
               onChange={(e) => setDiagnosisName(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 font-medium mb-3"
             />
-            <label className="block font-semibold text-slate-700 mb-1">Physician Certainty / Status</label>
+            <label className="block font-semibold text-slate-700 mb-1">Physician Certainty / Qualification</label>
             <select
               value={diagnosisCertainty}
-              onChange={(e) => setDiagnosisCertainty(e.target.value as "mentioned" | "suspected" | "confirmed")}
+              onChange={(e) => setDiagnosisCertainty(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 font-medium bg-white"
             >
               <option value="mentioned">Mentioned by physician in consultation</option>
@@ -340,7 +344,7 @@ export default function DoctorReviewForm({
               </div>
               <div className="sm:col-span-2">
                 <select
-                  value={sym.status}
+                  value={sym.status || "Active"}
                   onChange={(e) => handleUpdateSymptom(sym.id, "status", e.target.value)}
                   className="w-full px-2 py-1.5 rounded border border-slate-200 bg-white"
                 >
@@ -385,7 +389,7 @@ export default function DoctorReviewForm({
           {medications.map((med, idx) => (
             <div
               key={med.id}
-              className="p-3 bg-slate-50/70 rounded-lg border border-slate-200/80 text-xs space-y-2"
+              className="p-3.5 bg-slate-50/70 rounded-lg border border-slate-200/80 text-xs space-y-2.5"
             >
               <div className="flex items-center justify-between font-bold text-slate-700">
                 <span>Medicine #{idx + 1}</span>
@@ -414,8 +418,8 @@ export default function DoctorReviewForm({
                     type="text"
                     value={med.dosage}
                     onChange={(e) => handleUpdateMedication(med.id, "dosage", e.target.value)}
-                    placeholder="e.g. 500 mg"
-                    className="w-full px-2.5 py-1.5 rounded border border-slate-200 font-mono"
+                    placeholder="e.g. 500 mg, 650 mg"
+                    className="w-full px-2.5 py-1.5 rounded border border-slate-200 font-mono font-medium"
                   />
                 </div>
                 <div className="sm:col-span-3">
@@ -458,7 +462,7 @@ export default function DoctorReviewForm({
                   type="text"
                   value={med.instructions}
                   onChange={(e) => handleUpdateMedication(med.id, "instructions", e.target.value)}
-                  placeholder="e.g. After meals, take with plenty of water"
+                  placeholder="e.g. After meals with water"
                   className="w-full px-2.5 py-1.5 rounded border border-slate-200 text-slate-700"
                 />
               </div>
@@ -477,14 +481,14 @@ export default function DoctorReviewForm({
         {/* Dietary Advice */}
         <div className="space-y-2">
           <div className="flex items-center justify-between font-semibold text-slate-700">
-            <span>Dietary Advice</span>
+            <span>Dietary Instructions</span>
             <button
               type="button"
               onClick={() => handleAddAdvice("diet")}
               className="text-[11px] text-teal-700 font-bold hover:underline flex items-center space-x-1"
             >
               <Plus className="w-3 h-3" />
-              <span>Add Advice</span>
+              <span>Add Dietary Advice</span>
             </button>
           </div>
           {dietaryAdvice.map((adv, idx) => (
@@ -566,7 +570,7 @@ export default function DoctorReviewForm({
       <div className="sticky bottom-4 z-20 bg-white/95 backdrop-blur p-4 rounded-xl border border-slate-200 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center space-x-2 text-xs text-slate-600">
           <ShieldCheck className="w-4 h-4 text-teal-600" />
-          <span>All clinical modifications are saved directly to your session.</span>
+          <span>Doctor changes are strictly preserved and applied directly to the prescription.</span>
         </div>
 
         <div className="flex items-center space-x-3 w-full sm:w-auto">
@@ -616,12 +620,12 @@ export default function DoctorReviewForm({
             <div className="p-3 bg-slate-50 rounded-lg text-xs text-slate-700 space-y-1.5 border border-slate-200">
               <p className="font-semibold text-slate-900">Please verify before signing:</p>
               <p>• Patient: <strong>{patientName}</strong> ({patientAge} yrs, {patientGender})</p>
-              <p>• Prescribed Medications: <strong>{medications.length} items</strong> ({medications.map(m => m.name).join(", ")})</p>
+              <p>• Prescribed Medications: <strong>{medications.length} items</strong> ({medications.map(m => `${m.name} ${m.dosage}`).join(", ")})</p>
               <p>• Clinical Diagnosis: <strong>{diagnosisName}</strong></p>
             </div>
 
             <p className="text-xs text-slate-500 leading-relaxed">
-              By confirming, you sign and authorize the clinical summary and generate the official medical prescription PDF under your medical practitioner credentials.
+              By confirming, you authorize and sign the clinical summary and generate the official medical prescription PDF with all your edits applied.
             </p>
 
             <div className="flex items-center justify-end space-x-2 pt-2">

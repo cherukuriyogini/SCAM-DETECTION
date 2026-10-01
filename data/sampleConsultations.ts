@@ -46,7 +46,7 @@ Doctor: Come back if the fever persists beyond three days, symptoms worsen, or y
         doctorLicense: "MED-LIC-84920",
       },
       chiefComplaint: "Fever, sore throat and dry cough for 3 days.",
-      chiefComplaintSource: "I've had a fever for about three days. It started with a sore throat and then I developed a dry cough.",
+      chiefComplaintEvidence: "I've had a fever for about three days. It started with a sore throat and then I developed a dry cough.",
       symptoms: [
         {
           id: "sym-1",
@@ -54,6 +54,7 @@ Doctor: Come back if the fever persists beyond three days, symptoms worsen, or y
           duration: "3 days",
           severity: "Moderate",
           status: "Active",
+          evidence: "The fever is around 101 degrees Fahrenheit, mostly in the evening.",
           sourceSentence: "The fever is around 101 degrees Fahrenheit, mostly in the evening.",
         },
         {
@@ -62,6 +63,7 @@ Doctor: Come back if the fever persists beyond three days, symptoms worsen, or y
           duration: "3 days",
           severity: "Moderate",
           status: "Active",
+          evidence: "and then I developed a dry cough.",
           sourceSentence: "and then I developed a dry cough.",
         },
         {
@@ -70,6 +72,7 @@ Doctor: Come back if the fever persists beyond three days, symptoms worsen, or y
           duration: "3 days",
           severity: "Mild",
           status: "Resolving",
+          evidence: "It started with a sore throat",
           sourceSentence: "It started with a sore throat",
         },
         {
@@ -78,6 +81,7 @@ Doctor: Come back if the fever persists beyond three days, symptoms worsen, or y
           duration: "3 days",
           severity: "Mild",
           status: "Active",
+          evidence: "I feel tired and have some body aches.",
           sourceSentence: "I feel tired and have some body aches.",
         },
       ],
@@ -87,6 +91,7 @@ Doctor: Come back if the fever persists beyond three days, symptoms worsen, or y
           name: "Upper Respiratory Tract Infection (URTI)",
           certainty: "mentioned",
           icd10: "J06.9",
+          evidence: "Based on your symptoms, this appears consistent with an upper respiratory infection.",
           sourceSentence: "Based on your symptoms, this appears consistent with an upper respiratory infection.",
         },
       ],
@@ -99,6 +104,7 @@ Doctor: Come back if the fever persists beyond three days, symptoms worsen, or y
           duration: "3 days",
           route: "Oral",
           instructions: "After food",
+          evidence: "I'll prescribe paracetamol 500 mg three times daily after food for three days",
           sourceSentence: "I'll prescribe paracetamol 500 mg three times daily after food for three days",
         },
         {
@@ -109,6 +115,7 @@ Doctor: Come back if the fever persists beyond three days, symptoms worsen, or y
           duration: "5 days",
           route: "Oral",
           instructions: "At bedtime with water",
+          evidence: "and cetirizine 10 mg once at night for five days.",
           sourceSentence: "and cetirizine 10 mg once at night for five days.",
         },
       ],
@@ -124,7 +131,8 @@ Doctor: Come back if the fever persists beyond three days, symptoms worsen, or y
       warnings: [
         "Seek emergency medical evaluation immediately if shortness of breath or persistent chest discomfort occurs.",
       ],
-      summaryText: "28-year-old male presenting with a 3-day history of moderate fever (up to 101°F), sore throat, dry cough, and fatigue. No reported chest pain, shortness of breath, or vomiting. Clinical impression is consistent with an acute viral upper respiratory tract infection. Managed conservatively with antipyretic analgesia and antihistamine support with hydration advice.",
+      summaryText:
+        "28-year-old male presenting with a 3-day history of moderate fever (up to 101°F), sore throat, dry cough, and fatigue. No reported chest pain, shortness of breath, or vomiting. Clinical impression is consistent with an acute viral upper respiratory tract infection. Managed conservatively with antipyretic analgesia and antihistamine support with hydration advice.",
       transcript: `Doctor: What brings you in today?
 Patient: I've had a fever for about three days. It started with a sore throat and then I developed a dry cough. The fever is around 101 degrees Fahrenheit, mostly in the evening.
 Doctor: Any shortness of breath, chest pain, or vomiting?
@@ -172,7 +180,8 @@ Doctor: Rest in a dark, quiet room, keep well hydrated, and maintain a headache 
         doctorLicense: "MED-LIC-84920",
       },
       chiefComplaint: "Severe throbbing unilateral right-sided headache with photophobia and nausea for 24 hours.",
-      chiefComplaintSource: "I have had a severe throbbing headache on the right side of my head since yesterday afternoon. Any bright light or loud noise makes it much worse, and I feel nauseous.",
+      chiefComplaintEvidence:
+        "I have had a severe throbbing headache on the right side of my head since yesterday afternoon. Any bright light or loud noise makes it much worse, and I feel nauseous.",
       symptoms: [
         {
           id: "sym-1",
@@ -180,6 +189,7 @@ Doctor: Rest in a dark, quiet room, keep well hydrated, and maintain a headache 
           duration: "24 hours",
           severity: "Severe",
           status: "Active",
+          evidence: "I have had a severe throbbing headache on the right side of my head since yesterday afternoon.",
           sourceSentence: "I have had a severe throbbing headache on the right side of my head since yesterday afternoon.",
         },
         {
@@ -188,6 +198,7 @@ Doctor: Rest in a dark, quiet room, keep well hydrated, and maintain a headache 
           duration: "24 hours",
           severity: "Moderate",
           status: "Active",
+          evidence: "Any bright light or loud noise makes it much worse",
           sourceSentence: "Any bright light or loud noise makes it much worse",
         },
         {
@@ -196,6 +207,7 @@ Doctor: Rest in a dark, quiet room, keep well hydrated, and maintain a headache 
           duration: "24 hours",
           severity: "Moderate",
           status: "Active",
+          evidence: "and I feel nauseous.",
           sourceSentence: "and I feel nauseous.",
         },
         {
@@ -204,6 +216,7 @@ Doctor: Rest in a dark, quiet room, keep well hydrated, and maintain a headache 
           duration: "Prior to onset",
           severity: "Mild",
           status: "Resolving",
+          evidence: "I noticed some flickering spots in my vision right before the pain began.",
           sourceSentence: "I noticed some flickering spots in my vision right before the pain began.",
         },
       ],
@@ -213,6 +226,7 @@ Doctor: Rest in a dark, quiet room, keep well hydrated, and maintain a headache 
           name: "Acute Migraine with visual aura",
           certainty: "mentioned",
           icd10: "G43.109",
+          evidence: "That sounds very characteristic of a migraine episode with aura.",
           sourceSentence: "That sounds very characteristic of a migraine episode with aura.",
         },
       ],
@@ -225,6 +239,7 @@ Doctor: Rest in a dark, quiet room, keep well hydrated, and maintain a headache 
           duration: "As needed (SOS)",
           route: "Oral",
           instructions: "Take at first sign of migraine; maximum 100 mg in 24 hours",
+          evidence: "take Sumatriptan 50 mg as soon as migraine symptoms start",
           sourceSentence: "take Sumatriptan 50 mg as soon as migraine symptoms start",
         },
         {
@@ -235,6 +250,7 @@ Doctor: Rest in a dark, quiet room, keep well hydrated, and maintain a headache 
           duration: "2 days",
           route: "Oral",
           instructions: "With food or a glass of milk",
+          evidence: "and Naproxen 250 mg twice daily with food for two days",
           sourceSentence: "and Naproxen 250 mg twice daily with food for two days",
         },
       ],
@@ -246,11 +262,13 @@ Doctor: Rest in a dark, quiet room, keep well hydrated, and maintain a headache 
         "Rest in a dark, quiet, well-ventilated room during acute episodes",
         "Maintain a headache diary tracking duration, triggers, and sleep patterns",
       ],
-      followUp: "Routine follow-up in 2 weeks. Seek emergency care immediately if experiencing 'thunderclap' sudden severe headache or neurological deficits.",
+      followUp:
+        "Routine follow-up in 2 weeks. Seek emergency care immediately if experiencing 'thunderclap' sudden severe headache or neurological deficits.",
       warnings: [
         "Return immediately if accompanied by neck stiffness, high fever, speech difficulty, or focal limb weakness.",
       ],
-      summaryText: "34-year-old female presenting with episodic severe unilateral throbbing headache accompanied by nausea, photophobia, and preceding visual aura. History consistent with migraine with aura triggered by stress. Prescribed abortive triptan and NSAID anti-inflammatory therapy with dark room rest and trigger avoidance.",
+      summaryText:
+        "34-year-old female presenting with episodic severe unilateral throbbing headache accompanied by nausea, photophobia, and preceding visual aura. History consistent with migraine with aura triggered by stress. Prescribed abortive triptan and NSAID anti-inflammatory therapy with dark room rest and trigger avoidance.",
       transcript: `Doctor: Hello Priya, please tell me what you are experiencing.
 Patient: Doctor, I have had a severe throbbing headache on the right side of my head since yesterday afternoon. Any bright light or loud noise makes it much worse, and I feel nauseous.
 Doctor: Have you had headaches like this before in the past?
@@ -296,7 +314,8 @@ Doctor: Avoid eating spicy foods, citrus, late-night dinners, and coffee. Elevat
         doctorLicense: "MED-LIC-84920",
       },
       chiefComplaint: "Epigastric burning sensation radiating retrosternally, acid regurgitation, and morning nausea for 5 days.",
-      chiefComplaintSource: "For the past five days, I have had a burning feeling right in the middle of my upper stomach that rises up into my chest. It gets worse after heavy dinner and when I lie down to sleep.",
+      chiefComplaintEvidence:
+        "For the past five days, I have had a burning feeling right in the middle of my upper stomach that rises up into my chest. It gets worse after heavy dinner and when I lie down to sleep.",
       symptoms: [
         {
           id: "sym-1",
@@ -304,6 +323,7 @@ Doctor: Avoid eating spicy foods, citrus, late-night dinners, and coffee. Elevat
           duration: "5 days",
           severity: "Moderate",
           status: "Active",
+          evidence: "I have had a burning feeling right in the middle of my upper stomach that rises up into my chest.",
           sourceSentence: "I have had a burning feeling right in the middle of my upper stomach that rises up into my chest.",
         },
         {
@@ -312,6 +332,7 @@ Doctor: Avoid eating spicy foods, citrus, late-night dinners, and coffee. Elevat
           duration: "5 days",
           severity: "Moderate",
           status: "Active",
+          evidence: "Just a sour acidic taste in my mouth and frequent burping.",
           sourceSentence: "Just a sour acidic taste in my mouth and frequent burping.",
         },
         {
@@ -320,6 +341,7 @@ Doctor: Avoid eating spicy foods, citrus, late-night dinners, and coffee. Elevat
           duration: "5 days",
           severity: "Mild",
           status: "Active",
+          evidence: "I also feel mildly nauseous in the mornings.",
           sourceSentence: "I also feel mildly nauseous in the mornings.",
         },
       ],
@@ -329,7 +351,10 @@ Doctor: Avoid eating spicy foods, citrus, late-night dinners, and coffee. Elevat
           name: "Gastroesophageal Reflux Disease (GERD) with mild gastritis",
           certainty: "mentioned",
           icd10: "K21.9",
-          sourceSentence: "These symptoms point strongly toward gastroesophageal reflux disease, or acid reflux with mild gastritis.",
+          evidence:
+            "These symptoms point strongly toward gastroesophageal reflux disease, or acid reflux with mild gastritis.",
+          sourceSentence:
+            "These symptoms point strongly toward gastroesophageal reflux disease, or acid reflux with mild gastritis.",
         },
       ],
       medications: [
@@ -341,6 +366,7 @@ Doctor: Avoid eating spicy foods, citrus, late-night dinners, and coffee. Elevat
           duration: "14 days",
           route: "Oral",
           instructions: "30 minutes before breakfast on empty stomach",
+          evidence: "Pantoprazole 40 mg once daily, taken 30 minutes before breakfast for fourteen days.",
           sourceSentence: "Pantoprazole 40 mg once daily, taken 30 minutes before breakfast for fourteen days.",
         },
         {
@@ -351,6 +377,7 @@ Doctor: Avoid eating spicy foods, citrus, late-night dinners, and coffee. Elevat
           duration: "7 days",
           route: "Oral",
           instructions: "Post meals as needed for heartburn",
+          evidence: "take an antacid gel, 10 ml after lunch and dinner as needed for symptomatic relief.",
           sourceSentence: "take an antacid gel, 10 ml after lunch and dinner as needed for symptomatic relief.",
         },
       ],
@@ -366,7 +393,8 @@ Doctor: Avoid eating spicy foods, citrus, late-night dinners, and coffee. Elevat
       warnings: [
         "Seek immediate emergency care if experiencing difficulty swallowing, persistent vomiting, or black/tarry stools.",
       ],
-      summaryText: "45-year-old male presenting with typical symptoms of gastroesophageal reflux disease and mild dyspepsia exacerbated postprandially and in recumbent position. Red flag symptoms negative. Initiated on a 14-day trial of oral proton pump inhibitor with adjunctive antacid suspension alongside dietary and lifestyle modification.",
+      summaryText:
+        "45-year-old male presenting with typical symptoms of gastroesophageal reflux disease and mild dyspepsia exacerbated postprandially and in recumbent position. Red flag symptoms negative. Initiated on a 14-day trial of oral proton pump inhibitor with adjunctive antacid suspension alongside dietary and lifestyle modification.",
       transcript: `Doctor: Good morning Vikram. What issues have you been having?
 Patient: Good morning Doctor. For the past five days, I have had a burning feeling right in the middle of my upper stomach that rises up into my chest. It gets worse after heavy dinner and when I lie down to sleep. I also feel mildly nauseous in the mornings.
 Doctor: Have you noticed any difficulty swallowing, unexplained weight loss, or black stools?

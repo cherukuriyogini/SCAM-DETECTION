@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ClinicalSummary } from "@/types/clinical";
-import { getStoredConsultations, setActiveConsultation } from "@/lib/storage";
+import {
+  getStoredConsultations,
+  setActiveConsultation,
+  fetchConsultationsFromDb,
+} from "@/lib/storage";
 import { generatePrescriptionPDF } from "@/lib/pdfGenerator";
 import {
   History,
@@ -23,6 +27,11 @@ export default function HistoryPage() {
 
   useEffect(() => {
     setConsultations(getStoredConsultations());
+    fetchConsultationsFromDb().then((list) => {
+      if (list && list.length > 0) {
+        setConsultations(list);
+      }
+    });
   }, []);
 
   const handleSelect = (c: ClinicalSummary, tab?: string) => {

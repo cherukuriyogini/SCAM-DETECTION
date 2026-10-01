@@ -27,7 +27,7 @@ export default function RootLayout({
               <span className="ml-2 text-slate-400">Doctor in the loop at all times.</span>
             </div>
             <div className="text-slate-400">
-              PS-010 Medical AI Hackathon MVP • Built with Next.js & Tailwind CSS
+              © 2026 SmartScribe Health • Enterprise Ambient Clinical Suite
             </div>
           </div>
         </footer>

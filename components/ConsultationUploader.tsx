@@ -1,283 +1,438 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { SAMPLE_CASES } from "@/data/sampleConsultations";
+import { useState, useRef, useEffect } from "react";
 import {
-  Mic,
   UploadCloud,
   FileText,
-  Sparkles,
-  Music,
   Trash2,
-  Play,
-  Pause,
   AlertCircle,
   Shield,
   ArrowRight,
+  Loader2,
+  CheckCircle2,
+  Copy,
+  Sparkles,
+  User,
 } from "lucide-react";
 
+interface PatientDetailsInput {
+  name?: string;
+  age?: string;
+  gender?: string;
+  mrn?: string;
+}
+
 interface ConsultationUploaderProps {
-  onAnalyze: (data: {
+  onTranscriptReady: (data: {
     transcript: string;
     audioFileName?: string;
     audioDuration?: string;
+    patientDetails?: PatientDetailsInput;
   }) => void;
 }
 
-export default function ConsultationUploader({ onAnalyze }: ConsultationUploaderProps) {
-  const [activeTab, setActiveTab] = useState<"audio" | "transcript">("audio");
-  const [audioFile, setAudioFile] = useState<{
-    name: string;
-    size: string;
-    duration: string;
-  } | null>(null);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [transcript, setTranscript] = useState<string>("");
-  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+export default function ConsultationUploader({ onTranscriptReady }: ConsultationUploaderProps) {
+  // Patient intake state
+  const [patientName, setPatientName] = useState("");
+  const [patientAge, setPatientAge] = useState("");
+  const [patientGender, setPatientGender] = useState("Unspecified");
+  const [patientMrn, setPatientMrn] = useState("");
 
-  // Load a demo consultation case
-  const handleLoadDemoCase = (caseIndex: number = 0) => {
-    const selected = SAMPLE_CASES[caseIndex];
-    setSelectedCaseId(selected.id);
-    setTranscript(selected.transcript);
-    setAudioFile({
-      name: `consultation_${selected.id}.mp3`,
-      size: "2.4 MB",
-      duration: selected.audioDuration,
-    });
-    setValidationError(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioDuration, setAudioDuration] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"audio" | "transcript">("audio");
+
+  // Real Transcription Pipeline State
+  const [transcribing, setTranscribing] = useState(false);
+  const [transcribeStep, setTranscribeStep] = useState<string>("");
+  const [transcribedText, setTranscribedText] = useState<string>("");
+  const [isTranscribed, setIsTranscribed] = useState(false);
+
+  // Manual transcript
+  const [manualTranscript, setManualTranscript] = useState<string>("");
+
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Clean up object URL when component unmounts or file changes
+  useEffect(() => {
+    return () => {
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    };
+  }, [audioUrl]);
+
+  const handleFileChange = (file: File) => {
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    const valid = ["mp3", "wav", "m4a", "webm", "ogg", "mpeg"];
+    if (ext && !valid.includes(ext)) {
+      setErrorMessage(`Unsupported audio format (.${ext}). Please select an MP3, WAV, M4A, or WEBM audio file.`);
+      return;
+    }
+
+    setErrorMessage(null);
+    setSelectedFile(file);
+    setIsTranscribed(false);
+    setTranscribedText("");
+
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    const newUrl = URL.createObjectURL(file);
+    setAudioUrl(newUrl);
   };
 
-  // Handle file drop / select
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const ext = file.name.split(".").pop()?.toLowerCase();
-      if (!["mp3", "wav", "m4a", "webm"].includes(ext || "")) {
-        setValidationError("Please upload a valid audio format: MP3, WAV, M4A, or WEBM.");
-        return;
-      }
-      setValidationError(null);
-      const sizeMB = (file.size / (1024 * 1024)).toFixed(1) + " MB";
-      setAudioFile({
-        name: file.name,
-        size: sizeMB,
-        duration: "2m 14s",
-      });
-      // If transcript is empty, prefill default consultation or keep current
-      if (!transcript) {
-        setTranscript(SAMPLE_CASES[0].transcript);
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      const sec = Math.round(audioRef.current.duration);
+      if (!isNaN(sec)) {
+        const mins = Math.floor(sec / 60);
+        const remSecs = sec % 60;
+        setAudioDuration(`${mins}:${remSecs < 10 ? "0" : ""}${remSecs}`);
       }
     }
   };
 
-  const handleClearAudio = () => {
-    setAudioFile(null);
-    setIsPlayingAudio(false);
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    setAudioUrl(null);
+    setAudioDuration("");
+    setIsTranscribed(false);
+    setTranscribedText("");
+    setErrorMessage(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleStartAnalysis = () => {
-    if (activeTab === "audio" && !audioFile && !transcript.trim()) {
-      setValidationError("Please select an audio recording or load a synthetic demo consultation.");
+  // Execute REAL speech-to-text API call
+  const handleRealTranscription = async () => {
+    if (!selectedFile) return;
+
+    setTranscribing(true);
+    setErrorMessage(null);
+
+    try {
+      setTranscribeStep("Uploading audio file to backend pipeline...");
+
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      setTranscribeStep("Transcribing conversation with speech-to-text API...");
+
+      const response = await fetch("/api/transcribe", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Speech-to-text transcription failed.");
+      }
+
+      setTranscribeStep("Transcript ready!");
+      setTranscribedText(data.transcript);
+      setIsTranscribed(true);
+
+      if (data.duration && !audioDuration) {
+        const m = Math.floor(data.duration / 60);
+        const s = data.duration % 60;
+        setAudioDuration(`${m}:${s < 10 ? "0" : ""}${s}`);
+      }
+    } catch (err) {
+      console.error("Transcription error:", err);
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : "We couldn't transcribe this audio. Please check your API configuration and try again."
+      );
+    } finally {
+      setTranscribing(false);
+    }
+  };
+
+  // User clicks Analyze Clinical Information
+  const handleProceedToAnalysis = () => {
+    const textToAnalyze = activeTab === "audio" ? transcribedText.trim() : manualTranscript.trim();
+
+    if (!textToAnalyze) {
+      setErrorMessage("Please ensure a consultation transcript is available to analyze.");
       return;
     }
-    if (activeTab === "transcript" && !transcript.trim()) {
-      setValidationError("Please enter or paste a doctor-patient conversation transcript.");
-      return;
-    }
-    setValidationError(null);
-    onAnalyze({
-      transcript: transcript.trim() || SAMPLE_CASES[0].transcript,
-      audioFileName: audioFile?.name,
-      audioDuration: audioFile?.duration,
+
+    setErrorMessage(null);
+    onTranscriptReady({
+      transcript: textToAnalyze,
+      audioFileName: selectedFile?.name,
+      audioDuration: audioDuration || undefined,
+      patientDetails: {
+        name: patientName.trim() || undefined,
+        age: patientAge.trim() || undefined,
+        gender: patientGender !== "Unspecified" ? patientGender : undefined,
+        mrn: patientMrn.trim() || undefined,
+      },
     });
+  };
+
+  const handleCopyTranscript = () => {
+    const text = activeTab === "audio" ? transcribedText : manualTranscript;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <div className="space-y-6">
       {/* Title & Subtitle */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">New Consultation</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          New Clinical Consultation
+        </h1>
         <p className="text-sm text-slate-500 mt-1">
-          Upload a consultation recording or paste a transcript to begin ambient clinical analysis.
+          Enter patient details and upload an actual consultation recording (MP3, WAV, M4A) for real speech-to-text and AI entity extraction.
         </p>
       </div>
 
-      {/* Synthetic Demo Consultation Quick Load Bar */}
-      <div className="p-4 rounded-xl bg-gradient-to-r from-teal-50/90 via-emerald-50/60 to-slate-50 border border-teal-200 shadow-xs">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      {/* Patient Intake Card (Requirement #17 Step 3) */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-teal-800">
+          <User className="w-4 h-4 text-teal-600" />
+          <span>Patient Intake Demographics (Optional / Pre-fill)</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
           <div>
-            <div className="flex items-center space-x-2">
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-teal-600 text-white">
-                Hackathon Demo
-              </span>
-              <h3 className="text-sm font-bold text-slate-900">Load Synthetic Demo Consultation</h3>
-            </div>
-            <p className="text-xs text-slate-600 mt-0.5">
-              Instantly test realistic doctor-patient conversations with full clinical entity trace.
-            </p>
+            <label className="block text-slate-600 font-semibold mb-1">Patient Full Name</label>
+            <input
+              type="text"
+              value={patientName}
+              onChange={(e) => setPatientName(e.target.value)}
+              placeholder="e.g. Rahul Sharma"
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+            />
           </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleLoadDemoCase(0)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                selectedCaseId === SAMPLE_CASES[0].id
-                  ? "bg-teal-700 text-white border-teal-700 shadow-sm"
-                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
-              }`}
+          <div>
+            <label className="block text-slate-600 font-semibold mb-1">Age</label>
+            <input
+              type="text"
+              value={patientAge}
+              onChange={(e) => setPatientAge(e.target.value)}
+              placeholder="e.g. 28"
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-600 font-semibold mb-1">Gender</label>
+            <select
+              value={patientGender}
+              onChange={(e) => setPatientGender(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none bg-white text-slate-700"
             >
-              Demo 1: Fever & Cough
-            </button>
-            <button
-              type="button"
-              onClick={() => handleLoadDemoCase(1)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                selectedCaseId === SAMPLE_CASES[1].id
-                  ? "bg-teal-700 text-white border-teal-700 shadow-sm"
-                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              Demo 2: Migraine
-            </button>
-            <button
-              type="button"
-              onClick={() => handleLoadDemoCase(2)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                selectedCaseId === SAMPLE_CASES[2].id
-                  ? "bg-teal-700 text-white border-teal-700 shadow-sm"
-                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              Demo 3: Acid Reflux
-            </button>
+              <option value="Unspecified">Unspecified (Auto-detect)</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-slate-600 font-semibold mb-1">Medical Record No. (MRN)</label>
+            <input
+              type="text"
+              value={patientMrn}
+              onChange={(e) => setPatientMrn(e.target.value)}
+              placeholder="e.g. MRN-2026-0841"
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-mono"
+            />
           </div>
         </div>
       </div>
 
-      {/* Tab Switcher */}
+      {/* Input Method Switcher */}
       <div className="flex space-x-1 border-b border-slate-200">
         <button
-          onClick={() => setActiveTab("audio")}
+          onClick={() => {
+            setActiveTab("audio");
+            setErrorMessage(null);
+          }}
           className={`flex items-center space-x-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all ${
             activeTab === "audio"
               ? "border-teal-600 text-teal-800"
-              : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+              : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
-          <Mic className="w-4 h-4" />
-          <span>Option A: Audio Recording</span>
+          <UploadCloud className="w-4 h-4" />
+          <span>Real Audio File Upload (MP3 / WAV)</span>
         </button>
 
         <button
-          onClick={() => setActiveTab("transcript")}
+          onClick={() => {
+            setActiveTab("transcript");
+            setErrorMessage(null);
+          }}
           className={`flex items-center space-x-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all ${
             activeTab === "transcript"
               ? "border-teal-600 text-teal-800"
-              : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+              : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
           <FileText className="w-4 h-4" />
-          <span>Option B: Text Transcript</span>
+          <span>Direct Transcript Input</span>
         </button>
       </div>
 
-      {/* OPTION A: Audio Upload */}
+      {/* Error Banner */}
+      {errorMessage && (
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-start space-x-3">
+          <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <span className="font-bold text-rose-950 block">Pipeline Error</span>
+            <p className="leading-relaxed">{errorMessage}</p>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 1: AUDIO UPLOAD */}
       {activeTab === "audio" && (
-        <div className="space-y-4">
-          {!audioFile ? (
+        <div className="space-y-5">
+          {!selectedFile ? (
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-slate-300 hover:border-teal-500 bg-white hover:bg-slate-50/60 rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all group"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (e.dataTransfer.files?.[0]) {
+                  handleFileChange(e.dataTransfer.files[0]);
+                }
+              }}
+              className="border-2 border-dashed border-slate-300 hover:border-teal-500 hover:bg-teal-50/20 rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all space-y-4"
             >
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".mp3,.wav,.m4a,.webm,audio/*"
-                onChange={handleFileUpload}
+                accept=".mp3,.wav,.m4a,.webm,.ogg,.mpeg"
                 className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) handleFileChange(e.target.files[0]);
+                }}
               />
-              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+
+              <div className="w-14 h-14 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto shadow-xs">
                 <UploadCloud className="w-7 h-7" />
               </div>
-              <h3 className="text-base font-bold text-slate-900">
-                Upload consultation audio recording
-              </h3>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                Drag and drop MP3, WAV, M4A, or WEBM audio file here, or click to browse.
-              </p>
-              <div className="mt-4 flex items-center justify-center space-x-2 text-[11px] text-slate-400 font-medium">
-                <span className="px-2 py-0.5 rounded bg-slate-100">MP3</span>
-                <span className="px-2 py-0.5 rounded bg-slate-100">WAV</span>
-                <span className="px-2 py-0.5 rounded bg-slate-100">M4A</span>
-                <span className="px-2 py-0.5 rounded bg-slate-100">WEBM</span>
+
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-slate-900">
+                  Select or drag consultation audio recording
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Supports MP3, WAV, M4A, WEBM, FLAC (Max 25MB)
+                </p>
               </div>
+
+              <button
+                type="button"
+                className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-600/20"
+              >
+                <span>Browse Files</span>
+              </button>
             </div>
           ) : (
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5 shadow-sm">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
-                    <Music className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-xs uppercase">
+                    {selectedFile.name.split(".").pop()}
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900">{audioFile.name}</h4>
+                    <h4 className="text-sm font-bold text-slate-900 truncate max-w-xs sm:max-w-md">
+                      {selectedFile.name}
+                    </h4>
                     <p className="text-xs text-slate-500">
-                      Size: {audioFile.size} • Duration: {audioFile.duration} • Ready for analysis
+                      {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • {audioDuration || "Calculating duration..."}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsPlayingAudio(!isPlayingAudio)}
-                    className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                  >
-                    {isPlayingAudio ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                    <span>{isPlayingAudio ? "Pause" : "Preview Audio"}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleClearAudio}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                    title="Remove file"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveFile}
+                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                  title="Remove file"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* Animated Waveform Visualizer */}
-              <div className="p-3 bg-slate-900 rounded-lg flex items-center justify-between gap-1 overflow-hidden h-12 px-4">
-                {[...Array(32)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-1 rounded-full transition-all duration-300 ${
-                      isPlayingAudio ? "bg-teal-400 animate-pulse" : "bg-teal-800"
-                    }`}
-                    style={{
-                      height: isPlayingAudio
-                        ? `${Math.max(15, (Math.sin(i * 0.7) * 0.5 + 0.5) * 100)}%`
-                        : `${(i % 5 + 2) * 12}%`,
-                    }}
-                  />
-                ))}
-              </div>
-
-              {/* Synchronized Transcript Preview */}
-              {transcript && (
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs">
-                  <div className="text-[10px] uppercase font-bold text-slate-400 mb-1">
-                    Synchronized Conversation Transcript
+              {/* Native HTML5 Audio Player for Physician Playback */}
+              {audioUrl && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                    <span>Physician Audio Preview</span>
+                    <span className="text-[11px] text-teal-700 font-normal">Play, pause & seek consultation recording</span>
                   </div>
-                  <p className="text-slate-600 italic line-clamp-2">
-                    &ldquo;{transcript.slice(0, 160)}...&rdquo;
+                  <audio
+                    ref={audioRef}
+                    src={audioUrl}
+                    controls
+                    onLoadedMetadata={handleLoadedMetadata}
+                    className="w-full h-11 rounded-xl bg-slate-50"
+                  />
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+                {!isTranscribed ? (
+                  <button
+                    type="button"
+                    onClick={handleRealTranscription}
+                    disabled={transcribing}
+                    className="w-full sm:w-auto flex items-center justify-center space-x-2 px-6 py-3 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-600/20 disabled:opacity-60 transition-all"
+                  >
+                    {transcribing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>{transcribeStep || "Transcribing Audio..."}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Transcribe with Speech-to-Text</span>
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleProceedToAnalysis}
+                    className="w-full sm:w-auto flex items-center justify-center space-x-2 px-6 py-3 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 shadow-lg shadow-teal-600/20 transition-all hover:scale-[1.01]"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Extract Clinical Information</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Transcribed dialogue box */}
+              {isTranscribed && (
+                <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
+                      <span>Verbatim Transcript Generated from Audio</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyTranscript}
+                      className="text-[11px] text-teal-700 font-semibold hover:underline flex items-center space-x-1"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>{copied ? "Copied!" : "Copy"}</span>
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-700 font-mono whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto bg-white p-3 rounded-lg border border-slate-200">
+                    {transcribedText}
                   </p>
                 </div>
               )}
@@ -286,53 +441,45 @@ export default function ConsultationUploader({ onAnalyze }: ConsultationUploader
         </div>
       )}
 
-      {/* OPTION B: Text Transcript */}
+      {/* TAB 2: DIRECT TRANSCRIPT INPUT */}
       {activeTab === "transcript" && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <label className="font-semibold text-slate-700">Paste Consultation Transcript</label>
-            <span className="text-slate-400 font-mono">{transcript.length} characters</span>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
+          <div className="space-y-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+              Paste or Type Consultation Dialogue
+            </label>
+            <p className="text-xs text-slate-500">
+              Provide doctor-patient dialogue. SmartScribe will extract symptoms, diagnoses, medications, dosages, and exact citations.
+            </p>
           </div>
 
           <textarea
             rows={10}
-            value={transcript}
-            onChange={(e) => {
-              setTranscript(e.target.value);
-              setValidationError(null);
-            }}
-            placeholder={`Doctor: What brings you in today?\nPatient: I've had a fever and cough for three days...\nDoctor: Any shortness of breath, chest pain, or vomiting?`}
-            className="w-full p-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 text-xs font-mono leading-relaxed bg-white"
+            value={manualTranscript}
+            onChange={(e) => setManualTranscript(e.target.value)}
+            placeholder="Doctor: Good morning. What brings you in today?&#10;Patient: Doctor, I've had fever for three days, dry cough, and mild headache...&#10;Doctor: Let me check. I will prescribe paracetamol 500 mg..."
+            className="w-full p-4 text-xs font-mono rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 leading-relaxed"
           />
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleProceedToAnalysis}
+              disabled={!manualTranscript.trim()}
+              className="flex items-center space-x-2 px-6 py-3 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-600/20 disabled:opacity-50 transition-all"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Extract Clinical Information</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Validation Error Banner */}
-      {validationError && (
-        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs flex items-center space-x-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{validationError}</span>
-        </div>
-      )}
-
-      {/* Primary CTA and Privacy Note */}
-      <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center space-x-2 text-xs text-slate-500">
-          <Shield className="w-4 h-4 text-teal-600 shrink-0" />
-          <span>
-            Data processed for documentation assistance only. Avoid uploading real PHI in demo environments.
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleStartAnalysis}
-          className="w-full sm:w-auto flex items-center justify-center space-x-2 px-6 py-3 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 shadow-md shadow-teal-600/20 transition-all hover:scale-[1.01]"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>Analyze Consultation</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
+      {/* Security footer notice */}
+      <div className="flex items-center space-x-2 text-[11px] text-slate-400 pt-2">
+        <Shield className="w-3.5 h-3.5 text-teal-600" />
+        <span>Protected Health Information (PHI) encrypted • Server-side API processing only • No client credential exposure</span>
       </div>
     </div>
   );

@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ClinicalSummary } from "@/types/clinical";
-import { getConsultationById, saveConsultation, getActiveConsultation } from "@/lib/storage";
-import { SAMPLE_CASES } from "@/data/sampleConsultations";
+import {
+  getConsultationById,
+  saveConsultation,
+  getActiveConsultation,
+  fetchConsultationById,
+} from "@/lib/storage";
 import ClinicalSummaryView from "@/components/ClinicalSummaryView";
 import DoctorReviewForm from "@/components/DoctorReviewForm";
 import PrescriptionPreview from "@/components/PrescriptionPreview";
@@ -15,6 +19,8 @@ import {
   FileCheck,
   ChevronLeft,
   CheckCircle,
+  AlertCircle,
+  PlusCircle,
 } from "lucide-react";
 
 type ActiveTab = "summary" | "review" | "prescription";
@@ -27,9 +33,9 @@ export default function ConsultationDetailPage() {
   const [summary, setSummary] = useState<ClinicalSummary | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("summary");
   const [showToast, setShowToast] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    // Check url search param for initial tab
     const tabParam = searchParams.get("tab") as ActiveTab;
     if (tabParam && ["summary", "review", "prescription"].includes(tabParam)) {
       setActiveTab(tabParam);
@@ -40,18 +46,18 @@ export default function ConsultationDetailPage() {
       if (found) {
         setSummary(found);
       } else {
-        // Check active or match against sample cases
         const active = getActiveConsultation();
         if (active && active.id === id) {
           setSummary(active);
         } else {
-          const sample = SAMPLE_CASES.find((s) => s.id === id);
-          if (sample) {
-            setSummary(sample.summary);
-          } else {
-            // Default fallback to first sample
-            setSummary(SAMPLE_CASES[0].summary);
-          }
+          // Fetch from MongoDB via API
+          fetchConsultationById(id).then((fromDb) => {
+            if (fromDb) {
+              setSummary(fromDb);
+            } else {
+              setNotFound(true);
+            }
+          });
         }
       }
     }
@@ -75,11 +81,30 @@ export default function ConsultationDetailPage() {
     triggerToast("Prescription approved and officially issued by Dr. Jenkins.");
   };
 
+  if (notFound) {
+    return (
+      <div className="py-20 text-center max-w-md mx-auto space-y-4">
+        <AlertCircle className="w-12 h-12 text-slate-400 mx-auto" />
+        <h2 className="text-lg font-bold text-slate-900">Consultation Record Not Found</h2>
+        <p className="text-xs text-slate-500">
+          The requested consultation could not be located in your local session. Please upload a consultation audio recording to start.
+        </p>
+        <Link
+          href="/consultation/new"
+          className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-sm"
+        >
+          <PlusCircle className="w-4 h-4" />
+          <span>Upload Audio Consultation</span>
+        </Link>
+      </div>
+    );
+  }
+
   if (!summary) {
     return (
       <div className="py-20 text-center">
         <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-sm font-semibold text-slate-600">Loading clinical consultation...</p>
+        <p className="text-sm font-semibold text-slate-600">Loading consultation record...</p>
       </div>
     );
   }
