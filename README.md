@@ -1,117 +1,131 @@
-# SmartScribe — Ambient Clinical AI Assistant
+# ScamInvestigation AI 🛡️
+> **AI-Powered Protection Against Digital Scams**  
+> *Detect. Explain. Protect.*
 
-> **"Listen. Understand. Structure. Prescribe."**
-> **Problem Statement: PS-010 — Doctor-Patient Conversation Summarizer & Prescription Generator**
-> Domain: Artificial Intelligence & Machine Learning (Healthcare)
-
----
-
-## 🏥 Overview
-
-Doctors spend up to 40% of their consultation time typing clinical notes into EHR systems instead of engaging with patients. **SmartScribe** is an ambient clinical intelligence assistant that captures the natural doctor-patient conversation, separates clinical signal from conversational noise, structures the findings into a verifiable SOAP-style summary, and generates a printable medical prescription with the **doctor firmly in control**.
+ScamInvestigation AI is an advanced, production-grade cybersecurity and fraud intelligence platform. It analyzes suspicious WhatsApp/SMS messages, screenshots, and URLs, deconstructs manipulative social engineering tactics, highlights specific trigger evidence, assigns a multi-dimensional risk score, and provides clear, actionable defensive protocols.
 
 ---
 
-## ⚡ Core Hackathon Flow (Ready to Demo)
-
-1. **Dashboard (`/`)**:
-   - Outpatient clinical telemetry (Consultations Today, Notes Generated, Prescriptions Prepared, 1.8s avg processing time).
-   - 1-Click synthetic demo launchers for 3 clinical cases.
-   - Historical records with patient details, status, and PDF export.
-
-2. **New Consultation Intake (`/consultation/new`)**:
-   - **Option A (Audio Upload)**: Drag-and-drop MP3, WAV, M4A, WEBM with audio duration and waveform visualizer.
-   - **Option B (Text Transcript)**: Full transcription editor with speaker labeling.
-   - **1-Click Synthetic Demo Presets**:
-     - *Case 1*: Rahul Sharma (Fever, Dry Cough & Sore Throat — URTI)
-     - *Case 2*: Priya Patel (Throbbing Headache & Photophobia — Migraine with Aura)
-     - *Case 3*: Vikram Mehta (Epigastric Pain, Acid Reflux & Nausea — GERD / Gastritis)
-
-3. **Multi-Stage Processing Pipeline**:
-   - Visual step-by-step progress indicator:
-     - ✓ Conversation received
-     - ✓ Transcribing & filtering conversational noise
-     - ✓ Identifying clinical entities
-     - ✓ Extracting symptoms and medications
-     - ✓ Structuring clinical summary
-     - ✓ Preparing doctor review workspace
-
-4. **Clinical Summary & Evidence Traceability (`/consultation/[id]`)**:
-   - **Chief Complaint** highlighted card.
-   - **Symptoms Table**: Duration, severity tags (Mild / Moderate / Severe), and status.
-   - **Clinical Impression / Diagnosis**: Explicitly qualified as *"Mentioned by physician in consultation"* (ensuring AI never claims autonomous diagnosis).
-   - **Prescribed Medications Table**: Medication, Dosage, Frequency, Duration, Route, Instructions.
-   - **Dietary & Clinical Advice**: Categorized bullet points.
-   - **Follow-Up & Red Flag Warnings**: Clear emergency return criteria.
-   - **"Why was this extracted?" Traceability Engine**: Interactive evidence panel linking every clinical entity to its exact quote in the conversation transcript!
-
-5. **Doctor Review & Edit Studio**:
-   - Complete inline editing of patient demographics, chief complaints, symptoms, diagnoses, medications, dosages, frequency, and instructions.
-   - Add/Delete buttons for symptoms, medications, and advice.
-   - Review workflow tracker: `AI Draft` ➔ `Doctor Reviewed` ➔ `Approved & Prescribed`.
-   - Confirmation safety modal prior to final authorization.
-
-6. **Prescription Preview & PDF Generation**:
-   - Photorealistic clinical letterhead with doctor credentials, clinic branding, patient banner, Rx emblem, medication table, and doctor signature.
-   - **Download Prescription PDF**: High-resolution vector PDF generated client-side via `jsPDF`.
-   - **Print Prescription**: Native browser print stylesheet formatting.
+## 🌟 Why ScamInvestigation AI?
+Most fraud detection tools return a simplistic, unhelpful binary verdict: `SAFE` or `SCAM`.  
+**ScamInvestigation AI goes further:**
+- **Deconstructs Threat Evidence**: Highlights exact quotes from the message (e.g. upfront registration fees, fake police threats, credential requests).
+- **Explains the Psychology & Tactics**: Explains *why* the content is dangerous in plain, accessible language.
+- **Calculates a Multi-Vector Risk Breakdown**: Scores urgency, financial demands, identity harvesting, social engineering, and URL risk separately.
+- **Recommends Immediate Counter-Measures**: Clear, numbered steps to protect money, credentials, and digital identity.
+- **Zero-Dependency Guarantee**: Contains an enterprise heuristic engine that runs 100% offline out-of-the-box, plus optional Groq/OpenAI LLM enhancement when configured.
 
 ---
 
-## 🛠️ Tech Stack
+## 🏗️ Architecture & Tech Stack
 
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript (Strict typing for clinical models)
-- **Styling**: Tailwind CSS (Medical SaaS palette: white, slate, clinical teal, emerald)
-- **Icons**: Lucide React
-- **PDF Generation**: jsPDF (Vector printable medical prescription)
-- **AI / LLM Engine**: Server API (`/api/analyze`) with support for `OPENAI_API_KEY`, backed by a robust deterministic clinical NLP fallback engine (zero configuration required).
-- **Persistence**: LocalStorage with realistic seed consultations.
+```text
+User Input (Message / Screenshot / URL)
+   │
+   ├── Screenshot ───────► Tesseract.js / Backend OCR Engine
+   │
+   ├── URL Link ─────────► Zero-Visit Safe Security Sandbox
+   │
+   └── Text / Message ───► Heuristic NLP & Threat Pattern Engine
+                                 │
+                                 ▼ (Optional Hybrid LLM Enhancement)
+                     Groq / OpenAI Llama-3 / GPT-OSS
+                                 │
+                                 ▼
+                     Structured Scam Classification
+                                 │
+          ┌──────────────────────┼──────────────────────┐
+          ▼                      ▼                      ▼
+  Scam Risk Assessment    Forensic Evidence     Action Guidance
+   (0-100 Score Dial)    (Why We Flagged This)   (Immediate Steps)
+```
+
+- **Frontend**: React 18, Vite, Tailwind CSS v4, Lucide React Icons, Tesseract.js
+- **Backend**: Python 3.13, FastAPI, Pydantic, Uvicorn
+- **Threat Intelligence**: Regex heuristics, NLP pattern detection, Brand spoofing detection, Zero-visit URL inspection
+- **Persistence**: Dynamic local storage + PostgreSQL-ready REST API
 
 ---
 
-## 🔒 Safety & Clinical Governance
+## 🚀 Quick Start Guide
 
-- **Doctor in Control**: AI serves strictly as an ambient scribe. The treating physician must review, edit, and sign off on all prescriptions.
-- **No Hallucinated Diagnoses**: Diagnostic impressions are always qualified as *"Mentioned by physician"*.
-- **100% Traceability**: Every extracted symptom, medication, and dosage is directly attributed to verified conversation quotes.
-- **Data Privacy**: Local demonstration data is synthetic; no real patient PHI is stored.
+### Prerequisites
+- Python 3.10+
+- Node.js 18+ and npm
 
----
-
-## 🚀 Getting Started
-
-### 1. Install Dependencies
+### 1-Click Startup
+From the project root directory, run:
 ```bash
+python run_app.py
+```
+*(On Windows, you can also double-click `start.bat`)*
+
+Both services will start simultaneously:
+- **Frontend Dashboard**: [http://localhost:5173](http://localhost:5173)
+- **Backend API Docs (Swagger)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Health Check**: [http://localhost:8000/api/health](http://localhost:8000/api/health)
+
+---
+
+## ⚡ Manual Startup (Individual Terminals)
+
+### Terminal 1: Backend
+```bash
+cd backend
+python -m pip install -r requirements.txt   # or fastapi uvicorn pydantic python-multipart requests python-dotenv
+uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+### Terminal 2: Frontend
+```bash
+cd frontend
 npm install
-```
-
-### 2. (Optional) Configure OpenAI API Key
-Create a `.env.local` file:
-```env
-OPENAI_API_KEY=your_openai_api_key_here
-```
-> *Note: If no API key is provided, SmartScribe automatically operates in **Demo Mode** with the high-accuracy deterministic clinical extraction engine.*
-
-### 3. Run Development Server
-```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 4. Production Build & Start
-```bash
-npm run build
-npm run start
+---
+
+## 🔑 Environment Variables (Optional)
+
+ScamInvestigation AI is engineered to work **100% reliably out of the box without any API keys**.  
+If you want to enable external hybrid LLM enhancement, set the following in your environment or in `.env.local`:
+
+```env
+# Optional Groq API Key (OpenAI-compatible)
+GROQ_API_KEY=gsk_...
+GROQ_ANALYSIS_MODEL=openai/gpt-oss-120b
+
+# Or OpenAI API Key
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
 ```
 
 ---
 
-## 👨‍⚕️ Hackathon Evaluation Checklist
+## 🏆 Hackathon Demo Flow (for Judges)
 
-- [x] **PS-010 Alignment**: Doctor-patient consultation summarization & prescription generation.
-- [x] **Clinical Entity Extraction (40%)**: Symptoms, durations, severity, medications, dosages, frequencies, and advice extracted accurately.
-- [x] **Medical Summary Quality (35%)**: Structured, concise SOAP-aligned summary with verified source sentence citations.
-- [x] **Doctor Review Experience (25%)**: Real-time editable fields, add/delete medications, status lifecycle, and confirmation.
-- [x] **Working PDF Export**: Vector-quality printable PDF download + browser print.
-- [x] **Zero-Config Demo Mode**: 3 rich synthetic clinical scenarios ready for instant demonstration.
+To demonstrate the full capability in under 2 minutes:
+
+1. **Open the Application**: Navigate to [http://localhost:5173](http://localhost:5173).
+2. **Review the Landing Hero**: Notice the cybersecurity dashboard aesthetic, real-time "AI Protection Active" indicator, and feature highlights (*Detect. Explain. Protect.*).
+3. **Click a Demo Scenario**:
+   - Click **"Fake Job Offer"** under *Try a Live Scam Demo*.
+   - Watch the analyzer automatically pre-fill with realistic job fraud text.
+4. **Click "Analyze for Scam"**:
+   - Observe the step-by-step progress animation (*Checking scam indicators... Evaluating URL threat...*).
+5. **Inspect the Forensic Result Dashboard**:
+   - **Risk Gauge**: 98 / 100 🔴 HIGH RISK
+   - **Category**: Fake Job Scam (95% Confidence)
+   - **Why We Flagged This**: Notice 5 individual warning cards showing exact matched quotes (e.g. `Pay ₹999`, `registration fee`, `Send your Aadhaar`) paired with plain-language cybersecurity explanations.
+   - **Risk Breakdown Bars**: Urgency (85%), Financial Request (95%), Identity Request (90%), Suspicious Language (80%).
+   - **What Should I Do Now?**: Clear numbered defense steps (Never send money, never share OTP, verify officially).
+   - **Extracted Entities**: Currency amounts (`₹45,000`, `₹999`) and keyword badges.
+6. **Try URL Sandboxing**:
+   - Switch to the **"Suspicious Link"** tab.
+   - Enter `http://sbi-netbanking-verify.xyz/login`.
+   - Click **Analyze for Scam** to view protocol warnings, unencrypted HTTP flags, high-risk `.xyz` TLD detection, and brand impersonation alerts — **without ever loading or opening the dangerous link**.
+7. **Try Screenshot OCR**:
+   - Upload any screenshot with suspicious text or vouchers to watch in-browser OCR transcribe and analyze it automatically.
+8. **Check History & About**:
+   - Click **History** in the top navigation to view the audit trail, filter by risk level, search, or reopen past scans.
+   - Click **About** to inspect the architecture diagram and engineering blueprint.
